@@ -1,0 +1,73 @@
+Metadata-Version: 2.4
+Name: investment_advisor
+Version: 0.1.0
+Author-email: Your Name <you@example.com>
+Requires-Python: <=3.13,>=3.12
+Description-Content-Type: text/markdown
+Requires-Dist: crewai[tools]>=0.152.0
+Requires-Dist: python-dotenv>=1.0.1
+Requires-Dist: html2text>=2024.2.26
+Requires-Dist: sec-api>=1.0.20
+Requires-Dist: requests>=2.31.0
+Requires-Dist: yfinance>=0.2.37
+Requires-Dist: twilio>=9.0.0
+
+# AI Investment Advisor
+
+AI Investment Advisor is a modular CrewAI project that simulates a multi-analyst research desk. Four specialized agents coordinate through structured JSON hand-offs to deliver a real-world ready investment verdict for any equity ticker.
+
+## Architecture Overview
+
+| Agent | Responsibility | Tools |
+| --- | --- | --- |
+| **MarketDataAgent** | Pulls yfinance quotes, short-term trend, volatility, and a 10-day close history. | `MarketDataTool` |
+| **NewsSentimentAgent** | Hits NewsAPI for the ticker, counts sentiment, and surfaces representative headlines. | `NewsSentimentTool` |
+| **RiskAnalyzerAgent** | Combines market + sentiment JSON, invokes the rule-based risk engine. | `RiskAnalyzerTool` |
+| **RecommendationAgent** | Consumes the three upstream payloads and outputs a Buy / Hold / Avoid JSON block. | (LLM only) |
+
+Agents never step outside their remit and only communicate via JSON payloads enforced inside `config/tasks.yaml`. This keeps reasoning explainable and cheap—each agent makes a single, tightly-scoped LLM call.
+
+## Data Sources & Costs
+
+- **yfinance** (free): Price, trend, volatility, history.
+- **NewsAPI** (free tier): Latest headlines and metadata.
+- **Local LLM via Ollama** (default: `llama3.1`): Keeps run-time costs at zero. Swap to OpenAI by editing `build_llm()` in `crew.py`.
+
+## Setup
+
+1. `cp .env.example .env` and populate:
+   - `OPENAI_API_KEY` *(only if switching to OpenAI)*
+   - `NEWSAPI_KEY`
+2. Install dependencies: `uv pip install -r pyproject.toml` or `poetry install --no-root` (both supported).
+3. Run the advisor: `uv run python -m stock_analysis.main` (defaults to AMZN).
+
+`main.py` keeps the same CLI as the original stock analyzer, so any existing automation continues to work.
+
+## Output Contract
+
+Every run ends with a single JSON object:
+
+```json
+{
+  "stock": "AMZN",
+  "price": "181.32",
+  "trend": "Bullish",
+  "sentiment": "Dominant sentiment: positive (5/8 articles)",
+  "risk": "Medium",
+  "summary": "Price +0.9% d/d to 181.32; 5-day SMA 179.84; volatility 0.221; headlines skew bullish after cloud contract wins.",
+  "recommendation": "BUY - Market momentum and upbeat news outweigh moderate volatility."
+}
+```
+
+## Execution Flow
+
+1. **MarketDataTask** → hits yfinance, returns numeric JSON only.
+2. **NewsSentimentTask** → queries NewsAPI, tabulates positive vs negative headlines.
+3. **RiskAnalysisTask** → forwards the merged JSON to `RiskAnalyzerTool`, which applies deterministic rules to label risk.
+4. **RecommendationTask** → references all prior JSON, cites their metrics, and emits the final contract shown above.
+
+Because each agent uses role-specific prompts and tool outputs, the system is explainable, debuggable, and ready for production integrations (dashboards, alerts, etc.).
+
+## License
+
+MIT

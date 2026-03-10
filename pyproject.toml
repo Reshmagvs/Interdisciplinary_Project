@@ -1,0 +1,20 @@
+[project]
+name = "investment_advisor"
+version = "0.1.0"
+description = ""
+authors = [{name = "Your Name", email = "you@example.com"}]
+readme = "README.md"
+requires-python = ">=3.12,<=3.13"
+dependencies = [
+    "crewai[tools]>=0.152.0",
+    "python-dotenv>=1.0.1",
+    "html2text>=2024.2.26",
+    "sec-api>=1.0.20",
+    "requests>=2.31.0",
+    "yfinance>=0.2.37",
+    "twilio>=9.0.0",
+]
+
+[project.scripts]
+investment_advisor = "investment_advisor.main:run"
+train = "investment_advisor.main:train"

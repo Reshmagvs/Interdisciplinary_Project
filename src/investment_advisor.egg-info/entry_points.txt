@@ -1,0 +1,3 @@
+[console_scripts]
+investment_advisor = investment_advisor.main:run
+train = investment_advisor.main:train

@@ -1,0 +1,33 @@
+market_data_task:
+  description: >
+    Use the MarketDataTool to pull live yfinance data for {company_stock}. Focus on price, daily delta,
+    5-day moving average, 30-day high/low, volatility, and the last 10 closes. Never hallucinate values.
+    Return data as JSON only, no prose.
+  expected_output: >
+    A JSON object with keys: stock, price, daily_change, daily_change_pct, trend, moving_average_5d,
+    high_30d, low_30d, volatility, price_series[], last_updated.
+
+news_sentiment_task:
+  description: >
+    Query NewsAPI for {company_stock} and transform the latest headlines into sentiment counts.
+    Identify dominant sentiment and provide representative headlines with URLs and timestamps.
+  expected_output: >
+    JSON with stock, dominant_sentiment, sentiment_counts{{positive,negative,neutral}},
+    and articles[] where each article has headline, url, published_at, sentiment.
+
+risk_analysis_task:
+  description: >
+    Ingest the merged JSON from market data and news sentiment. Call the RiskAnalyzerTool
+    with that payload to assign Low/Medium/High risk and explain the drivers.
+  expected_output: >
+    The exact JSON emitted by the RiskAnalyzerTool including risk_level, volatility stats,
+    trend_strength, sentiment, and explanation.
+
+recommendation_task:
+  description: >
+    Combine the structured outputs from the market, news, and risk agents.
+    Generate the final advisor response that matches the required schema strictly.
+    Base the Buy/Hold/Avoid call on quantitative evidence and cite each signal source.
+  expected_output: >
+    JSON: {"stock":"","price":"","trend":"","sentiment":"",
+    "risk":"","summary":"","recommendation":""}. The summary must cite numeric data.
